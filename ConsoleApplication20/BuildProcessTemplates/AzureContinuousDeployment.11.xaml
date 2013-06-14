@@ -1,0 +1,686 @@
+﻿<Activity mc:Ignorable="sad" x:Class="TfsBuild.Process" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:mt="clr-namespace:Microsoft.TeamFoundation;assembly=Microsoft.TeamFoundation.Common" xmlns:mtb="clr-namespace:Microsoft.TeamFoundation.Build.Common;assembly=Microsoft.TeamFoundation.Build.Common" xmlns:mtbc="clr-namespace:Microsoft.TeamFoundation.Build.Client;assembly=Microsoft.TeamFoundation.Build.Client" xmlns:mtbw="clr-namespace:Microsoft.TeamFoundation.Build.Workflow;assembly=Microsoft.TeamFoundation.Build.Workflow" xmlns:mtdwa="clr-namespace:Microsoft.TeamFoundation.Deployment.Workflow.Activities;assembly=Microsoft.TeamFoundation.Deployment.Workflow" xmlns:mtdw="clr-namespace:Microsoft.TeamFoundation.Deployment.Workflow;assembly=Microsoft.TeamFoundation.Deployment.Workflow" xmlns:mtbwa="clr-namespace:Microsoft.TeamFoundation.Build.Workflow.Activities;assembly=Microsoft.TeamFoundation.Build.Workflow" xmlns:mtbwt="clr-namespace:Microsoft.TeamFoundation.Build.Workflow.Tracking;assembly=Microsoft.TeamFoundation.Build.Workflow" xmlns:mttbb="clr-namespace:Microsoft.TeamFoundation.TestImpact.BuildIntegration.BuildActivities;assembly=Microsoft.TeamFoundation.TestImpact.BuildIntegration" xmlns:mtvc="clr-namespace:Microsoft.TeamFoundation.VersionControl.Client;assembly=Microsoft.TeamFoundation.VersionControl.Client" xmlns:mtvco="clr-namespace:Microsoft.TeamFoundation.VersionControl.Common;assembly=Microsoft.TeamFoundation.VersionControl.Common" xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:sad="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sad1="clr-namespace:System.Activities.Debugger;assembly=System.Activities" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib" xmlns:sl="clr-namespace:System.Linq;assembly=System.Core" xmlns:this="clr-namespace:TfsBuild;" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="SolutionToBuild" Type="InArgument(x:String)"/>
+    <x:Property Name="ConfigurationsToBuild" Type="InArgument(mtbwa:PlatformConfigurationList)"/>
+    <x:Property Name="TestSpecs" Type="InArgument(mtbwa:TestSpecList)"/>
+    <x:Property Name="BuildNumberFormat" Type="InArgument(x:String)"/>
+    <x:Property Name="CleanWorkspace" Type="InArgument(mtbwa:CleanWorkspaceOption)"/>
+    <x:Property Name="RunCodeAnalysis" Type="InArgument(mtbwa:CodeAnalysisOption)"/>
+    <x:Property Name="SourceAndSymbolServerSettings" Type="InArgument(mtbwa:SourceAndSymbolServerSettings)"/>
+    <x:Property Name="AgentSettings" Type="InArgument(mtbwa:AgentSettings)"/>
+    <x:Property Name="AssociateChangesetsAndWorkItems" Type="InArgument(x:Boolean)"/>
+    <x:Property Name="CreateWorkItem" Type="InArgument(x:Boolean)"/>
+    <x:Property Name="MSBuildArguments" Type="InArgument(x:String)"/>
+    <x:Property Name="MSBuildPlatform" Type="InArgument(mtbwa:ToolPlatform)"/>
+    <x:Property Name="MSBuildMultiProc" Type="InArgument(x:Boolean)"/>
+    <x:Property Name="PerformTestImpactAnalysis" Type="InArgument(x:Boolean)"/>
+    <x:Property Name="CreateLabel" Type="InArgument(x:Boolean)"/>
+    <x:Property Name="DisableTests" Type="InArgument(x:Boolean)"/>
+    <x:Property Name="GetVersion" Type="InArgument(x:String)"/>
+    <x:Property Name="PrivateDropLocation" Type="InArgument(x:String)"/>
+    <x:Property Name="Verbosity" Type="InArgument(mtbw:BuildVerbosity)"/>
+    <x:Property Name="Metadata" Type="mtbw:ProcessParameterMetadataCollection"/>
+    <x:Property Name="SupportedReasons" Type="mtbc:BuildReason"/>
+    <x:Property Name="DeploymentEnvironmentName" Type="InArgument(x:String)"/>
+    <x:Property Name="AllowUntrustedCertificates" Type="InArgument(x:Boolean)"/>
+    <!-- Additional Cloud Service Overrides -->
+    <x:Property Name="AlternatePublishProfile" Type="InArgument(x:String)"/>
+    <x:Property Name="AlternateHostedServiceName" Type="InArgument(x:String)"/>
+    <x:Property Name="AllowUpgrade" Type="InArgument(x:Boolean)"/>
+    <!-- NOTE: this deliberately a String instead of Enum type so it can easily be set by server code. -->
+    <x:Property Name="AlternateDeploymentSlot" Type="InArgument(x:String)"/>
+    <x:Property Name="AlternateStorageAccountName" Type="InArgument(x:String)"/>
+    <x:Property Name="AlternateDeploymentLabel" Type="InArgument(x:String)"/>
+    <x:Property Name="AlternateServiceConfiguration" Type="InArgument(x:String)"/>
+    <!-- Additional Web Deploy Overrides -->
+    <x:Property Name="AlternateWebDeployPublishProfile" Type="InArgument(x:String)"/>
+  </x:Members>
+  <this:Process.SolutionToBuild>
+    <InArgument x:TypeArguments="x:String"/>
+  </this:Process.SolutionToBuild>
+  <this:Process.ConfigurationsToBuild>[New Microsoft.TeamFoundation.Build.Workflow.Activities.PlatformConfigurationList()]</this:Process.ConfigurationsToBuild>
+  <this:Process.DisableTests>[False]</this:Process.DisableTests>
+  <this:Process.TestSpecs>[New Microsoft.TeamFoundation.Build.Workflow.Activities.TestSpecList(New Microsoft.TeamFoundation.Build.Workflow.Activities.AgileTestPlatformSpec("**\*test*.dll") With { .FailBuildOnFailure = True } )]</this:Process.TestSpecs>
+  <this:Process.BuildNumberFormat>["$(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.r)"]</this:Process.BuildNumberFormat>
+  <this:Process.AssociateChangesetsAndWorkItems>[True]</this:Process.AssociateChangesetsAndWorkItems>
+  <this:Process.CreateWorkItem>[True]</this:Process.CreateWorkItem>
+  <this:Process.CleanWorkspace>[Microsoft.TeamFoundation.Build.Workflow.Activities.CleanWorkspaceOption.All]</this:Process.CleanWorkspace>
+  <this:Process.MSBuildArguments>
+    <InArgument x:TypeArguments="x:String"/>
+  </this:Process.MSBuildArguments>
+  <this:Process.RunCodeAnalysis>[Microsoft.TeamFoundation.Build.Workflow.Activities.CodeAnalysisOption.AsConfigured]</this:Process.RunCodeAnalysis>
+  <this:Process.MSBuildMultiProc>[True]</this:Process.MSBuildMultiProc>
+  <this:Process.MSBuildPlatform>[Microsoft.TeamFoundation.Build.Workflow.Activities.ToolPlatform.Auto]</this:Process.MSBuildPlatform>
+  <this:Process.PerformTestImpactAnalysis>[True]</this:Process.PerformTestImpactAnalysis>
+  <this:Process.SourceAndSymbolServerSettings>[New Microsoft.TeamFoundation.Build.Workflow.Activities.SourceAndSymbolServerSettings(True, Nothing)]</this:Process.SourceAndSymbolServerSettings>
+  <this:Process.CreateLabel>[True]</this:Process.CreateLabel>
+  <this:Process.GetVersion>
+    <InArgument x:TypeArguments="x:String"/>
+  </this:Process.GetVersion>
+  <this:Process.AgentSettings>[New Microsoft.TeamFoundation.Build.Workflow.Activities.AgentSettings() With {.MaxWaitTime = New System.TimeSpan(4, 0, 0), .MaxExecutionTime = New System.TimeSpan(0, 0, 0), .TagComparison = Microsoft.TeamFoundation.Build.Workflow.Activities.TagComparison.MatchExactly }]</this:Process.AgentSettings>
+  <this:Process.Verbosity>[Microsoft.TeamFoundation.Build.Workflow.BuildVerbosity.Normal]</this:Process.Verbosity>
+  <this:Process.AllowUntrustedCertificates>[True]</this:Process.AllowUntrustedCertificates>
+  <this:Process.AllowUpgrade>[True]</this:Process.AllowUpgrade>
+  <this:Process.Metadata>
+    <mtbw:ProcessParameterMetadataCollection>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="EditingDefinition" Category="#100 обязательный" Required="True" DisplayName="Решение для построения" Description="Решение, подлежащее построению, упаковке и развертыванию." ParameterName="SolutionToBuild" Editor="Microsoft.TeamFoundation.Build.Controls.ServerFileBrowserEditor, Microsoft.TeamFoundation.Build.Controls"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="EditingDefinition" Category="#200 базовый" DisplayName="Конфигурация для построения" Description="Конфигурация для построения." ParameterName="ConfigurationsToBuild"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="EditingDefinition" Category="#300 Дополнительно" DisplayName="Многопроцессорный MSBuild" Description="Включение многопроцессорного MSBuid для параллельного построения проектов решения, если это возможно, с помощью всех процессоров сервера построения." ParameterName="MSBuildMultiProc"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="EditingDefinition" Category="#300 Дополнительно" DisplayName="Результаты построения, зависящие от решения" Description="Если задано значение True, результаты построения будут размещены в папках в зависимости от имени решения. Если задано значение False, результаты построения будут помещены в одну папку." ParameterName="SolutionSpecificBuildOutputs"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="#400 публикация -- общие" Description="Именованный набор параметров развертывания, используемых для развертывания приложения." DisplayName="Имя параметров развертывания" ParameterName="DeploymentEnvironmentName"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="#400 публикация -- общие" Description="Значение True разрешает использование некорневых сертификатов во время развертывания." DisplayName="Разрешить ненадежные сертификаты" ParameterName="AllowUntrustedCertificates"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="Публикация #500 -- облачная служба Azure" Description="Укажите путь к альтернативному профилю публикации в системе управления версиями." DisplayName="Альтернативный профиль публикации" ParameterName="AlternatePublishProfile" Editor="Microsoft.TeamFoundation.Build.Controls.ServerFileBrowserEditor, Microsoft.TeamFoundation.Build.Controls"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="Публикация #500 -- облачная служба Azure" Description="Укажите имя альтернативной учетной записи хранилища." DisplayName="Альтернативное имя учетной записи хранилища" ParameterName="AlternateStorageAccountName"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="Публикация #500 -- облачная служба Azure" Description="Задайте среду облачной службы: производственную или промежуточную." DisplayName="Альтернативная среда облачной службы" ParameterName="AlternateDeploymentSlot"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="Публикация #500 -- облачная служба Azure" Description="Задайте альтернативную метку развертывания." DisplayName="Альтернативная метка развертывания" ParameterName="AlternateDeploymentLabel"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="Публикация #500 -- облачная служба Azure" Description="Задайте альтернативное имя облачной службы." DisplayName="Альтернативное имя облачной службы" ParameterName="AlternateHostedServiceName"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="Публикация #500 -- облачная служба Azure" Description="Задайте альтернативную конфигурацию службы." DisplayName="Альтернативная конфигурация службы" ParameterName="AlternateServiceConfiguration"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="Публикация #500 -- облачная служба Azure" Description="Укажите, разрешено ли обновление развертывания." DisplayName="Разрешить обновление" ParameterName="AllowUpgrade"/>
+      <mtbw:ProcessParameterMetadata BrowsableWhen="Always" Category="Публикация #600 -- веб-сайт Azure" Description="Укажите путь к профилю публикации веб-развертывания в системе управления версиями." DisplayName="Профиль публикации веб-развертывания" ParameterName="AlternateWebDeployPublishProfile" Editor="Microsoft.TeamFoundation.Build.Controls.ServerFileBrowserEditor, Microsoft.TeamFoundation.Build.Controls"/>
+    </mtbw:ProcessParameterMetadataCollection>
+  </this:Process.Metadata>
+  <this:Process.SupportedReasons>All</this:Process.SupportedReasons>
+  <mva:VisualBasic.Settings>Assembly references and imported namespaces serialized as XML namespaces</mva:VisualBasic.Settings>
+  <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="mtbc:IBuildDetail" Name="BuildDetail"/>
+      <Variable x:TypeArguments="x:String" Name="DropLocation"/>
+      <Variable x:TypeArguments="mtbwa:PlatformConfiguration" Name="ConfigurationToBuild"/>
+    </Sequence.Variables>
+    <mtbwa:GetBuildDetail DisplayName="Получение построения" Result="[BuildDetail]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+    <Sequence DisplayName="Обновление расположения сброса" mtbwt:BuildTrackingParticipant.Importance="Low">
+      <mtbwa:InvokeForReason DisplayName="Обновление номера построения для инициированных построений" Reason="Triggered">
+        <mtbwa:UpdateBuildNumber BuildNumberFormat="[BuildNumberFormat]" DisplayName="Обновление номера построения"/>
+      </mtbwa:InvokeForReason>
+      <If Condition="[(Not String.IsNullOrEmpty(BuildDetail.DropLocationRoot)) AndAlso (BuildDetail.Reason And Microsoft.TeamFoundation.Build.Client.BuildReason.Triggered) = BuildDetail.Reason]" DisplayName="Если причина построения - Triggered" mtbwt:BuildTrackingParticipant.Importance="Low">
+        <If.Then>
+          <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+            <Assign x:TypeArguments="x:String" mtbwt:BuildTrackingParticipant.Importance="None" Value="[BuildDropProvider.CombinePaths(BuildDetail.DropLocationRoot, BuildDetail.BuildDefinition.Name, BuildDetail.BuildNumber)]" To="[DropLocation]"/>
+            <mtbwa:SetBuildProperties DisplayName="Задать расположение сброса" DropLocation="[DropLocation]" PropertiesToSet="DropLocation" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+          </Sequence>
+        </If.Then>
+      </If>
+      <If Condition="[(Not String.IsNullOrEmpty(PrivateDropLocation)) AndAlso BuildDetail.Reason = Microsoft.TeamFoundation.Build.Client.BuildReason.ValidateShelveset]" DisplayName="Если причина построения - ValidateShelveset" mtbwt:BuildTrackingParticipant.Importance="Low">
+        <If.Then>
+          <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+            <Assign x:TypeArguments="x:String" Value="[BuildDropProvider.CombinePaths(PrivateDropLocation, BuildDetail.BuildDefinition.Name, BuildDetail.BuildNumber)]" To="[DropLocation]" mtbwt:BuildTrackingParticipant.Importance="None"/>
+            <mtbwa:SetBuildProperties DisplayName="Задать расположение сброса для закрытого построения" DropLocation="[DropLocation]" PropertiesToSet="DropLocation" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+          </Sequence>
+        </If.Then>
+      </If>
+    </Sequence>
+    <mtbwa:AgentScope DisplayName="Выполнение в агенте" MaxExecutionTime="[AgentSettings.MaxExecutionTime]" MaxWaitTime="[AgentSettings.MaxWaitTime]" ReservationSpec="[AgentSettings.GetAgentReservationSpec()]">
+      <mtbwa:AgentScope.Variables>
+        <Variable x:TypeArguments="mtbc:IBuildAgent" Name="BuildAgent"/>
+        <Variable x:TypeArguments="mtvc:Workspace" Name="Workspace"/>
+        <Variable x:TypeArguments="x:String" Name="BuildDirectory"/>
+        <Variable x:TypeArguments="x:String" Default="[BuildDetail.BuildNumber]" Name="LabelName"/>
+        <Variable x:TypeArguments="x:String" Name="WorkspaceName"/>
+        <Variable x:TypeArguments="x:String" Name="SourcesDirectory"/>
+        <Variable x:TypeArguments="x:String" Name="BinariesDirectory"/>
+        <Variable x:TypeArguments="x:String" Name="TestResultsDirectory"/>
+      </mtbwa:AgentScope.Variables>
+      <Sequence DisplayName="Инициализация переменных" mtbwt:BuildTrackingParticipant.Importance="Low">
+        <mtbwa:GetBuildAgent DisplayName="Получение агента" Result="[BuildAgent]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+        <mtbwa:GetBuildDirectory DisplayName="Получение каталога построения" Result="[BuildDirectory]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+        <Assign x:TypeArguments="x:String" DisplayName="Инициализация имени рабочей области" To="[WorkspaceName]" Value="[String.Format(&quot;{0}_{1}_{2}&quot;, BuildDetail.BuildDefinition.Id, Microsoft.TeamFoundation.LinkingUtilities.DecodeUri(BuildAgent.Uri.AbsoluteUri).ToolSpecificId, BuildAgent.ServiceHost.Name)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+        <Assign x:TypeArguments="x:String" DisplayName="Инициализация каталога с исходным кодом" To="[SourcesDirectory]" Value="[String.Format(&quot;{0}\src&quot;, BuildDirectory)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+        <Assign x:TypeArguments="x:String" DisplayName="Инициализация каталога с двоичными файлами" To="[BinariesDirectory]" Value="[String.Format(&quot;{0}\bin&quot;, BuildDirectory)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+        <Assign x:TypeArguments="x:String" DisplayName="Инициализация каталога с результатами тестов" To="[TestResultsDirectory]" Value="[String.Format(&quot;{0}\tst&quot;, BuildDirectory)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+        <If Condition="[ConfigurationsToBuild.Count = 0]" DisplayName="Если ConfigurationsToBuild - Empty" mtbwt:BuildTrackingParticipant.Importance="Low">
+          <If.Then>
+            <Assign x:TypeArguments="mtbwa:PlatformConfiguration" DisplayName="Использовать конфигурацию платформы по умолчанию" To="[ConfigurationToBuild]" Value="[Microsoft.TeamFoundation.Build.Workflow.Activities.PlatformConfiguration.Default]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+          </If.Then>
+          <If.Else>
+            <Assign x:TypeArguments="mtbwa:PlatformConfiguration" DisplayName="Использовать конфигурацию платформы пользователя" To="[ConfigurationToBuild]" Value="[ConfigurationsToBuild(0)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+          </If.Else>
+        </If>
+        <If Condition="[WorkspaceName.Length &gt; Microsoft.TeamFoundation.VersionControl.Common.RepositoryConstants.MaxWorkspaceNameSize]" DisplayName="Если WorkspaceName &gt; MaxSize" mtbwt:BuildTrackingParticipant.Importance="Low">
+          <If.Then>
+            <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+              <mtbwa:WriteBuildWarning DisplayName="Запись предупреждения о размере рабочей области" Message="[String.Format(&quot;Длина имени рабочей области '{0}' превышает максимально допустимое значение: '{1}'. Имя будет обрезано до максимально разрешенной длины.&quot;, WorkspaceName, Microsoft.TeamFoundation.VersionControl.Common.RepositoryConstants.MaxWorkspaceNameSize)]"/>
+              <Assign x:TypeArguments="x:String" DisplayName="Обрезать значение WorkspaceName до размера MaxSize" To="[WorkspaceName]" Value="[WorkspaceName.Substring(0, Microsoft.TeamFoundation.VersionControl.Common.RepositoryConstants.MaxWorkspaceNameSize).TrimEnd()]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+            </Sequence>
+          </If.Then>
+        </If>
+      </Sequence>
+      <Sequence DisplayName="Инициализация рабочей области" mtbwt:BuildTrackingParticipant.Importance="Low">
+        <mtbwa:DeleteDirectory Directory="[TestResultsDirectory]" DisplayName="Удаление каталога с результатами тестов" Recursive="[True]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+        <If Condition="[Not CleanWorkspace = Microsoft.TeamFoundation.Build.Workflow.Activities.CleanWorkspaceOption.None]" DisplayName="Если CleanWorkspace не равно CleanWorkspaceOption.None" mtbwt:BuildTrackingParticipant.Importance="Low">
+          <If.Then>
+            <mtbwa:DeleteDirectory Directory="[BinariesDirectory]" DisplayName="Удаление каталога с двоичными файлами" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+          </If.Then>
+        </If>
+        <If Condition="[CleanWorkspace = Microsoft.TeamFoundation.Build.Workflow.Activities.CleanWorkspaceOption.All]" DisplayName="Если CleanWorkspace = CleanWorkspaceOption.All" mtbwt:BuildTrackingParticipant.Importance="Low">
+          <If.Then>
+            <Sequence DisplayName="Удаление рабочей области и каталога с исходным кодом" mtbwt:BuildTrackingParticipant.Importance="Low">
+              <mtbwa:DeleteWorkspace DeleteLocalItems="[True]" DisplayName="Удаление рабочей области" Name="[WorkspaceName]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+              <mtbwa:DeleteDirectory Directory="[SourcesDirectory]" DisplayName="Удаление каталога с исходным кодом" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+            </Sequence>
+          </If.Then>
+        </If>
+        <mtbwa:CreateWorkspace BuildDirectory="[BuildDirectory]" Comment="[&quot;Workspace Created by Team Build&quot;]" DisplayName="Создание рабочей области" Name="[WorkspaceName]" Result="[Workspace]" SourcesDirectory="[SourcesDirectory]"/>
+        <If Condition="[CleanWorkspace = Microsoft.TeamFoundation.Build.Workflow.Activities.CleanWorkspaceOption.Outputs]" DisplayName="Если CleanWorkspace = CleanWorkspaceOption.Outputs" mtbwt:BuildTrackingParticipant.Importance="Low">
+          <If.Then>
+            <Sequence DisplayName="Очистка конфигурации">
+              <If Condition="[Not String.IsNullOrEmpty(SolutionToBuild)]" DisplayName="Если SolutionToBuild не равно Nothing" mtbwt:BuildTrackingParticipant.Importance="Low">
+                <If.Then>
+                  <Sequence DisplayName="Очистка проекта" mtbwt:BuildTrackingParticipant.Importance="Low">
+                    <Sequence.Variables>
+                      <Variable x:TypeArguments="x:String" Name="localBuildProjectItem"/>
+                    </Sequence.Variables>
+                    <mtbwa:ConvertWorkspaceItem DisplayName="Преобразование серверных путей в локальные" Input="[SolutionToBuild]" Result="[localBuildProjectItem]" Workspace="[Workspace]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                    <If Condition="[System.IO.File.Exists(localBuildProjectItem)]" DisplayName="Если File.Exists(Project)" mtbwt:BuildTrackingParticipant.Importance="Low">
+                      <If.Then>
+                        <mtbwa:MSBuild CommandLineArguments="[String.Format(&quot;/p:SkipInvalidConfigurations=true {0}&quot;, MSBuildArguments)]" Configuration="[ConfigurationToBuild.Configuration]" DisplayName="Запуск MSBuild для проекта" GenerateVSPropsFile="[True]" MaxProcesses="[If (MSBuildMultiProc, 0, 1)]" OutDir="[BinariesDirectory]" Platform="[ConfigurationToBuild.Platform]" Project="[localBuildProjectItem]" Targets="[New String() { &quot;Clean&quot; }]" TargetsNotLogged="[New String() {&quot;GetNativeManifest&quot;, &quot;GetCopyToOutputDirectoryItems&quot;, &quot;GetTargetPath&quot;}]" ToolPlatform="[MSBuildPlatform]" Verbosity="[Verbosity]"/>
+                      </If.Then>
+                    </If>
+                  </Sequence>
+                </If.Then>
+              </If>
+            </Sequence>
+          </If.Then>
+        </If>
+        <mtbwa:SyncWorkspace DisplayName="Получение рабочей области" VersionOverride="[GetVersion]" Workspace="[Workspace]">
+          <mtbwa:SyncWorkspace.RequestsFailed>
+            <ActivityAction x:TypeArguments="scg:ICollection(mtbc:IQueuedBuild)">
+              <ActivityAction.Argument>
+                <DelegateInArgument x:TypeArguments="scg:ICollection(mtbc:IQueuedBuild)" Name="failedRequests"/>
+              </ActivityAction.Argument>
+              <mtbwa:RetryRequests Behavior="[Microsoft.TeamFoundation.Build.Workflow.Activities.RetryBehavior.DoNotBatch]" DisplayName="Пометить запросы для повторной попытки" Requests="[failedRequests]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+            </ActivityAction>
+          </mtbwa:SyncWorkspace.RequestsFailed>
+        </mtbwa:SyncWorkspace>
+      </Sequence>
+      <If Condition="[CreateLabel]" DisplayName="Если CreateLabel" mtbwt:BuildTrackingParticipant.Importance="Low">
+        <If.Then>
+          <mtbwa:InvokeForReason DisplayName="Создание и задание метки для построений, не относящихся к набору отложенных изменений" Reason="Manual, IndividualCI, BatchedCI, Schedule, ScheduleForced, UserCreated">
+            <mtbwa:LabelWorkspace Comment="[&quot;Label Created by Team Build&quot;]" DisplayName="Создание метки" Name="[LabelName]" Scope="[String.Format(&quot;$/{0}&quot;, BuildDetail.BuildDefinition.TeamProject)]" Workspace="[Workspace]"/>
+            <mtbwa:SetBuildProperties DisplayName="Задать метку в BuildDetail" LabelName="[String.Format(&quot;{0}@$/{1}&quot;, LabelName, BuildDetail.BuildDefinition.TeamProject)]" PropertiesToSet="LabelName" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+          </mtbwa:InvokeForReason>
+        </If.Then>
+        <If.Else>
+          <mtbwa:WriteBuildMessage DisplayName="Запись сообщения" Message="Без пометки исходного кода" Importance="[Microsoft.TeamFoundation.Build.Client.BuildMessageImportance.High]"/>
+        </If.Else>
+      </If>
+      <TryCatch DisplayName="Попробуйте откомпилировать, протестировать и сопоставить наборы изменений и рабочие элементы" mtbwt:BuildTrackingParticipant.Importance="Low">
+        <TryCatch.Finally>
+          <Sequence DisplayName="Восстановление рабочей области и копирование файлов в расположение сброса" mtbwt:BuildTrackingParticipant.Importance="Low">
+            <mtbwa:InvokeForReason DisplayName="Восстановление рабочей области для построений наборов отложенных изменений" Reason="CheckInShelveset, ValidateShelveset">
+              <mtbwa:RevertWorkspace DisplayName="Восстановление рабочей области" Workspace="[Workspace]"/>
+            </mtbwa:InvokeForReason>
+            <If Condition="[Not String.IsNullOrEmpty(DropLocation)]" DisplayName="Если DropLocation равно Set" mtbwt:BuildTrackingParticipant.Importance="Low">
+              <If.Then>
+                <mtbwa:CopyDirectory DisplayName="Сброс файлов в расположение сброса" Source="[BinariesDirectory]" Destination="[DropLocation]"/>
+              </If.Then>
+            </If>
+          </Sequence>
+        </TryCatch.Finally>
+        <TryCatch.Try>
+          <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+            <Sequence.Variables>
+              <Variable x:TypeArguments="s:Exception" Name="compilationException"/>
+              <Variable x:TypeArguments="scg:IList(mtvc:Changeset)" Name="associatedChangesets"/>
+              <Variable x:TypeArguments="s:Boolean" Name="treatTestFailureAsBuildFailure"/>
+            </Sequence.Variables>
+            <Parallel DisplayName="Компиляция, тестирование и сопоставление наборов изменений и рабочих элементов">
+              <TryCatch DisplayName="Попробуйте откомпилировать и протестировать" mtbwt:BuildTrackingParticipant.Importance="Low">
+                <TryCatch.Try>
+                  <Sequence DisplayName="Компиляция и тестирование">
+                    <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                      <Sequence.Variables>
+                        <Variable x:TypeArguments="x:String" Name="outputDirectory"/>
+                        <Variable x:TypeArguments="x:String" Name="logFileDropLocation"/>
+                        <Variable x:TypeArguments="mtbc:DeploymentEnvironment" Name="deploymentEnvironment"/>
+                        <Variable x:TypeArguments="mtdw:MSDeployProfile" Name="azureWebSiteProfile"/>
+                        <Variable x:TypeArguments="mtb:AzureCloudAppProfile" Name="azureCloudAppProfile"/>
+                        <Variable x:TypeArguments="x:Boolean" Name="deployOutput" Default="False"/>
+                        <Variable x:TypeArguments="x:String" Name="targetSite"/>
+                        <Variable x:TypeArguments="x:String" Name="AlternateWebDeployPublishProfileName"/>
+                        <Variable x:TypeArguments="x:Boolean" Name="CreateWebDeployPackage" Default="False"/>
+                      </Sequence.Variables>
+                      <Sequence DisplayName="Инициализация переменных" mtbwt:BuildTrackingParticipant.Importance="Low">
+                        <Assign x:TypeArguments="x:String" DisplayName="Создать выходной каталог" To="[outputDirectory]" Value="[BinariesDirectory]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                        <If Condition="[Not String.IsNullOrEmpty(DropLocation)]" DisplayName="Если DropLocation равно Set" mtbwt:BuildTrackingParticipant.Importance="Low">
+                          <If.Then>
+                            <Assign x:TypeArguments="x:String" DisplayName="Инициализация расположения для сброса файлов журнала" To="[logFileDropLocation]" Value="[BuildDropProvider.CombinePaths(DropLocation, &quot;logs&quot;)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                          </If.Then>
+                        </If>
+                        <If Condition="[Not String.IsNullOrEmpty(DeploymentEnvironmentName)]" DisplayName="Если DeploymentEnvironmentName равно Set" mtbwt:BuildTrackingParticipant.Importance="Low">
+                          <If.Then>
+                            <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                              <mtdwa:GetDeploymentEnvironment DisplayName="Получить среду развертывания" DeploymentEnvironmentName="[DeploymentEnvironmentName]" Result="[deploymentEnvironment]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                              <Assign x:TypeArguments="x:Boolean" DisplayName="Задать для вывода развертывания значение True" mtbwt:BuildTrackingParticipant.Importance="Low" Value="True" To="[deployOutput]"/>
+                              <If Condition="[deploymentEnvironment.EnvironmentMetadata.Kind = Microsoft.TeamFoundation.Build.Client.DeploymentEnvironmentKind.AzureWebSite]" DisplayName="Если в качестве DeploymentEnvironment задан веб-сайт Azure." mtbwt:BuildTrackingParticipant.Importance="Low">
+                                <If.Then>
+                                  <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                                    <mtdwa:GetAzureWebsitePublishProfile DisplayName="Получить профиль публикации веб-сайта Azure" ConnectedService="[deploymentEnvironment.ConnectedService]" WebsiteEnvironment="[deploymentEnvironment]" AllowUntrustedCertificates="[AllowUntrustedCertificates]" Result="[azureWebSiteProfile]"/>
+                                    <Assign x:TypeArguments="x:Boolean" DisplayName="Задать для создания пакета веб-развертывания значение True" mtbwt:BuildTrackingParticipant.Importance="Low" Value="True" To="[CreateWebDeployPackage]"/>
+                                    <!-- The following value is passed to MSBuild for packaging -->
+                                    <Assign x:TypeArguments="x:String" DisplayName="Задать переменную целевого сайта" mtbwt:BuildTrackingParticipant.Importance="Low" Value="[azureWebSiteProfile.MSDeploySite]" To="[targetSite]"/>
+                                    <If Condition="[Not String.IsNullOrEmpty(AlternateWebDeployPublishProfile)]" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Если используется альтернативный профиль публикации веб-развертывания">
+                                      <If.Then>
+                                        <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                                          <Sequence.Variables>
+                                            <Variable x:TypeArguments="x:String" Name="localProfile"/>
+                                          </Sequence.Variables>
+                                          <mtbwa:ConvertWorkspaceItem DisplayName="Преобразование серверного пути в локальный" Input="[AlternateWebDeployPublishProfile]" Result="[localProfile]" Workspace="[Workspace]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                          <Assign x:TypeArguments="x:String" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Записать альтернативное имя профиля публикации веб-развертывания" To="[AlternateWebDeployPublishProfileName]" Value="[System.IO.Path.GetFileNameWithoutExtension(localProfile)]"/>
+                                        </Sequence>
+                                      </If.Then>
+                                    </If>
+                                  </Sequence>
+                                </If.Then>
+                              </If>
+                              <If Condition="[deploymentEnvironment.EnvironmentMetadata.Kind = Microsoft.TeamFoundation.Build.Client.DeploymentEnvironmentKind.AzureCloudApp]" DisplayName="Если в качестве DeploymentEnvironment задана облачная служба Azure" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                <If.Then>
+                                  <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                                    <If Condition="[String.IsNullOrEmpty(AlternatePublishProfile)]" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Если использовать профиль публикации по умолчанию">
+                                      <If.Then>
+                                        <mtdwa:GetAzureCloudAppPublishProfile DisplayName="Получить профиль публикации облачной службы Azure по умолчанию" CloudAppEnvironment="[deploymentEnvironment]" Result="[azureCloudAppProfile]"/>
+                                      </If.Then>
+                                      <If.Else>
+                                        <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                                          <Sequence.Variables>
+                                            <Variable x:TypeArguments="x:String" Name="localProfile"/>
+                                          </Sequence.Variables>
+                                          <mtbwa:ConvertWorkspaceItem DisplayName="Преобразование серверного пути в локальный" Input="[AlternatePublishProfile]" Result="[localProfile]" Workspace="[Workspace]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                          <Assign x:TypeArguments="mtb:AzureCloudAppProfile" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Загрузить альтернативный профиль публикации" To="[azureCloudAppProfile]" Value="[AzureCloudAppProfile.Parse(System.IO.File.ReadAllText(localProfile))]"/>
+                                        </Sequence>
+                                      </If.Else>
+                                    </If>
+                                    <If Condition="[Not String.IsNullOrEmpty(AlternateHostedServiceName)]" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Если задано альтернативное имя облачной службы.">
+                                      <If.Then>
+                                        <Assign x:TypeArguments="x:String" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Задать альтернативное имя облачной службы в профиле." To="[azureCloudAppProfile.AzureHostedServiceName]" Value="[AlternateHostedServiceName]"/>
+                                      </If.Then>
+                                    </If>
+                                    <If Condition="[Not String.IsNullOrEmpty(AlternateDeploymentSlot)]" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Если задана альтернативная область развертывания.">
+                                      <If.Then>
+                                        <Assign x:TypeArguments="mtb:AzureDeploymentSlot" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Задать альтернативную область развертывания в профиле." To="[azureCloudAppProfile.AzureSlot]" Value="[CType([Enum].Parse(GetType(AzureDeploymentSlot), AlternateDeploymentSlot, True), AzureDeploymentSlot)]"/>
+                                      </If.Then>
+                                    </If>
+                                    <If Condition="[Not String.IsNullOrEmpty(AlternateStorageAccountName)]" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Если задано альтернативное имя учетной записи хранилища.">
+                                      <If.Then>
+                                        <Assign x:TypeArguments="x:String" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Задать альтернативное имя учетной записи хранилища в профиле." To="[azureCloudAppProfile.AzureStorageAccountName]" Value="[AlternateStorageAccountName]"/>
+                                      </If.Then>
+                                    </If>
+                                    <If Condition="[Not String.IsNullOrEmpty(AlternateServiceConfiguration)]" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Если задана альтернативная конфигурация службы.">
+                                      <If.Then>
+                                        <Assign x:TypeArguments="x:String" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Задать альтернативную конфигурацию службы в профиле." To="[azureCloudAppProfile.AzureServiceConfiguration]" Value="[AlternateServiceConfiguration]"/>
+                                      </If.Then>
+                                    </If>
+                                    <If Condition="[Not String.IsNullOrEmpty(AlternateDeploymentLabel)]" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Если задана альтернативная метка развертывания.">
+                                      <If.Then>
+                                        <Assign x:TypeArguments="x:String" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Задать альтернативную метку развертывания в профиле." To="[azureCloudAppProfile.AzureDeploymentLabel]" Value="[AlternateDeploymentLabel]"/>
+                                      </If.Then>
+                                    </If>
+                                    <If Condition="[Not AllowUpgrade = azureCloudAppProfile.AzureAllowUpgrade]" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Если переопределено разрешение обновления">
+                                      <If.Then>
+                                        <Assign x:TypeArguments="x:Boolean" mtbwt:BuildTrackingParticipant.Importance="Low" DisplayName="Задать разрешение обновления в профиле." To="[azureCloudAppProfile.AzureAllowUpgrade]" Value="[AllowUpgrade]"/>
+                                      </If.Then>
+                                    </If>
+                                    <If Condition="[(Not ConfigurationToBuild.IsConfigurationEmpty) AndAlso (Not String.IsNullOrEmpty(azureCloudAppProfile.AzureSolutionConfiguration))]" DisplayName="Если заданы конфигурация построения и конфигурация решения профиля Azure." mtbwt:BuildTrackingParticipant.Importance="Low">
+                                      <If.Then>
+                                        <If Condition="[Not (String.Compare(ConfigurationToBuild.Configuration, azureCloudAppProfile.AzureSolutionConfiguration, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.CompareOptions.OrdinalIgnoreCase) = 0)]" DisplayName="Если конфигурация построения и конфигурация профиля решения профиля Azure не равны." mtbwt:BuildTrackingParticipant.Importance="Low">
+                                          <If.Then>
+                                            <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                                              <Assign x:TypeArguments="x:Boolean" DisplayName="Задать для &quot;Deploy Output&quot; значение False" mtbwt:BuildTrackingParticipant.Importance="Low" Value="False" To="[deployOutput]"/>
+                                              <mtbwa:WriteBuildMessage DisplayName="Запись сообщения" Message="[String.Format(&quot;Это построение не будет развернуто, поскольку конфигурация построения -- {0} -- и конфигурация решения профиля Azure -- {1} -- не совпадают&quot;., ConfigurationToBuild.Configuration, azureCloudAppProfile.AzureSolutionConfiguration)]" Importance="[Microsoft.TeamFoundation.Build.Client.BuildMessageImportance.Normal]"/>
+                                            </Sequence>
+                                          </If.Then>
+                                        </If>
+                                      </If.Then>
+                                    </If>
+                                  </Sequence>
+                                </If.Then>
+                              </If>
+                              <If Condition="[deployOutput]" DisplayName="Выходные данные развертывания" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                <If.Then>
+                                  <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                                    <mtdwa:UpdateDeployment BuildDetail="[BuildDetail]" Stage="[Microsoft.TeamFoundation.Deployment.Workflow.Activities.DeploymentStage.Start]" DeploymentEnvironmentName="[deploymentEnvironment.EnvironmentMetadata.Name]" DisplayName="Пометить этот построение как включающее развертывание" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                    <If Condition="[deploymentEnvironment.EnvironmentMetadata.Kind = Microsoft.TeamFoundation.Build.Client.DeploymentEnvironmentKind.AzureCloudApp]" DisplayName="Если в качестве DeploymentEnvironment задана облачная служба Azure" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                      <If.Then>
+                                        <mtdwa:UpdateDeployment BuildDetail="[BuildDetail]" Stage="[Microsoft.TeamFoundation.Deployment.Workflow.Activities.DeploymentStage.AddProperty]" PropertyKey="AzureSlot" PropertyValue="[azureCloudAppProfile.AzureSlot.ToString()]" DisplayName="Добавить свойство AzureSlot в развертывание" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                      </If.Then>
+                                    </If>
+                                  </Sequence>
+                                </If.Then>
+                              </If>
+                            </Sequence>
+                          </If.Then>
+                        </If>
+                      </Sequence>
+                      <If Condition="[Not String.IsNullOrEmpty(SolutionToBuild)]" DisplayName="Если SolutionToBuild не равно Nothing" mtbwt:BuildTrackingParticipant.Importance="Low">
+                        <If.Then>
+                          <TryCatch DisplayName="Попробуйте откомпилировать проект" mtbwt:BuildTrackingParticipant.Importance="Low">
+                            <TryCatch.Try>
+                              <Sequence DisplayName="Компиляция проекта" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                <Sequence.Variables>
+                                  <Variable x:TypeArguments="x:String" Name="localProject"/>
+                                </Sequence.Variables>
+                                <mtbwa:ConvertWorkspaceItem DisplayName="Преобразование серверного пути в локальный" Input="[SolutionToBuild]" Result="[localProject]" Workspace="[Workspace]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                <If Condition="[(deploymentEnvironment IsNot Nothing) AndAlso (deploymentEnvironment.EnvironmentMetadata.Kind = Microsoft.TeamFoundation.Build.Client.DeploymentEnvironmentKind.AzureCloudApp)]" DisplayName="Если средой развертывания является облачная служба Azure" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                  <If.Then>
+                                    <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                                      <Sequence.Variables>
+                                        <Variable x:TypeArguments="x:String" Name="ccprojName"/>
+                                      </Sequence.Variables>
+                                      <mtdwa:FindCCProjInSln DisplayName="Найти проект Azure в решении" mtbwt:BuildTrackingParticipant.Importance="Low" SolutionPath="[localProject]" Result="[ccprojName]"/>
+                                      <Assign x:TypeArguments="x:String" DisplayName="Задать проект для построения пакета CSPack" To="[MSBuildArguments]" Value="[String.Format(&quot;/t:{0}:Publish /p:PublishDir={1}/app.publish/ {2}&quot;, ccprojName, outputDirectory, MSBuildArguments)]"/>
+                                      <If Condition="[Not String.IsNullOrEmpty(azureCloudAppProfile.AzureServiceConfiguration)]" DisplayName="Если указана конфигурация службы" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                        <If.Then>
+                                          <Assign x:TypeArguments="x:String" DisplayName="Задать конфигурацию службы Azure" To="[MSBuildArguments]" Value="[String.Format(&quot;/p:TargetProfile={0} {1}&quot;, azureCloudAppProfile.AzureServiceConfiguration, MSBuildArguments)]"/>
+                                        </If.Then>
+                                      </If>
+                                    </Sequence>
+                                  </If.Then>
+                                </If>
+                                <If Condition="[Not String.IsNullOrEmpty(AlternateWebDeployPublishProfileName) AndAlso (deploymentEnvironment.EnvironmentMetadata.Kind = Microsoft.TeamFoundation.Build.Client.DeploymentEnvironmentKind.AzureWebSite)]" DisplayName="Если в качестве DeploymentEnvironment задан веб-сайт Azure." mtbwt:BuildTrackingParticipant.Importance="Low">
+                                  <If.Then>
+                                    <Assign x:TypeArguments="x:String" DisplayName="Задать профиль публикации веб-развертывания" To="[MSBuildArguments]" Value="[String.Format(&quot;/p:WebPublishMethod=Package;PublishProfile=&quot;&quot;{0}&quot;&quot; {1}&quot;, AlternateWebDeployPublishProfileName, MSBuildArguments)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                  </If.Then>
+                                </If>
+                                <mtbwa:MSBuild CommandLineArguments="[String.Format(&quot;/p:SkipInvalidConfigurations=true {0}&quot;, MSBuildArguments)]" Configuration="[ConfigurationToBuild.Configuration]" DisplayName="Запуск MSBuild для проекта" GenerateVSPropsFile="[True]" LogFileDropLocation="[logFileDropLocation]" MaxProcesses="[If (MSBuildMultiProc, 0, 1)]" OutDir="[outputDirectory]" Platform="[ConfigurationToBuild.Platform]" Project="[localProject]" RunCodeAnalysis="[RunCodeAnalysis]" TargetsNotLogged="[New String() {&quot;GetNativeManifest&quot;, &quot;GetCopyToOutputDirectoryItems&quot;, &quot;GetTargetPath&quot;}]" ToolPlatform="[MSBuildPlatform]" Verbosity="[Verbosity]" DeployOnBuild="[CreateWebDeployPackage]" DeployIisAppPath="[targetSite]"/>
+                              </Sequence>
+                            </TryCatch.Try>
+                            <TryCatch.Catches>
+                              <Catch x:TypeArguments="s:Exception">
+                                <ActivityAction x:TypeArguments="s:Exception">
+                                  <ActivityAction.Argument>
+                                    <DelegateInArgument x:TypeArguments="s:Exception" Name="ex"/>
+                                  </ActivityAction.Argument>
+                                  <Sequence DisplayName="Обработка исключения">
+                                    <Sequence.Variables>
+                                      <Variable x:TypeArguments="scg:ICollection(mtbc:IQueuedBuild)" Name="failedRequests"/>
+                                    </Sequence.Variables>
+                                    <mtbwa:SetBuildProperties CompilationStatus="[Microsoft.TeamFoundation.Build.Client.BuildPhaseStatus.Failed]" DisplayName="Установить для CompilationStatus значение Failed" PropertiesToSet="CompilationStatus" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                    <If Condition="[CreateWorkItem]" DisplayName="Если CreateWorkItem" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                      <If.Then>
+                                        <mtbwa:InvokeForReason DisplayName="Создание рабочего элемента для построений, не относящихся к набору отложенных изменений" Reason="Manual, IndividualCI, BatchedCI, Schedule, ScheduleForced, UserCreated">
+                                          <mtbwa:OpenWorkItem AssignedTo="[BuildDetail.RequestedFor]" Comment="[&quot;Этот рабочий элемент был создан построением TFS при возникновении ошибки построения.&quot;]" CustomFields="[New Dictionary(Of String, String) From { {&quot;System.Reason&quot;, &quot;Не удалось выполнить построение&quot;}, {&quot;Microsoft.VSTS.TCM.ReproSteps&quot;, &quot;Начать построение с помощью построения TFS&quot;}, {&quot;Важность&quot;, &quot;1 - критическая&quot;} }]" DisplayName="Создание рабочего элемента" Title="[String.Format(&quot;Ошибка построения. Построение: {0}&quot;, BuildDetail.BuildNumber)]" Type="[&quot;Ошибка&quot;]"/>
+                                        </mtbwa:InvokeForReason>
+                                      </If.Then>
+                                    </If>
+                                    <mtbwa:GetApprovedRequests DisplayName="Получение запросов, одобренных для возврата" Result="[failedRequests]" mtbwt:BuildTrackingParticipant.Importance="None"/>
+                                    <mtbwa:RetryRequests Behavior="[Microsoft.TeamFoundation.Build.Workflow.Activities.RetryBehavior.DoNotBatch]" DisplayName="Пометить запросы для повторной попытки" Requests="[failedRequests]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                    <Rethrow DisplayName="Повторное создание исключения для остановки построения" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                  </Sequence>
+                                </ActivityAction>
+                              </Catch>
+                            </TryCatch.Catches>
+                          </TryCatch>
+                        </If.Then>
+                      </If>
+                      <If Condition="[Not DisableTests]" DisplayName="Если не DisableTests" mtbwt:BuildTrackingParticipant.Importance="Low">
+                        <If.Then>
+                          <Sequence DisplayName="Выполнение тестов" mtbwt:BuildTrackingParticipant.Importance="Low">
+                            <If Condition="[Not TestSpecs Is Nothing]" DisplayName="Если TestSpecs не равно Nothing" mtbwt:BuildTrackingParticipant.Importance="Low">
+                              <If.Then>
+                                <ForEach x:TypeArguments="mtbwa:TestSpec" DisplayName="Для каждого TestSpec в TestSpecs" Values="[TestSpecs]" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                  <ActivityAction x:TypeArguments="mtbwa:TestSpec">
+                                    <ActivityAction.Argument>
+                                      <DelegateInArgument x:TypeArguments="mtbwa:TestSpec" Name="spec"/>
+                                    </ActivityAction.Argument>
+                                    <TryCatch DisplayName="Попробуйте выполнить тесты" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                      <TryCatch.Try>
+                                        <If Condition="[TypeOf spec Is Microsoft.TeamFoundation.Build.Workflow.Activities.AgileTestPlatformSpec]" DisplayName="Если спецификация - AgileTestPlatformSpec" mtbwt:BuildTrackingParticipant.Importance="None">
+                                          <If.Then>
+                                            <Sequence DisplayName="Запуск Visual Studio Test Runner для исходных кодов тестов" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                              <Sequence.Variables>
+                                                <Variable x:TypeArguments="mtbwa:AgileTestPlatformSpec" Name="agileTestPlatformAssembly"/>
+                                                <Variable x:TypeArguments="scg:IEnumerable(x:String)" Name="agileTestPlatformAssemblies"/>
+                                              </Sequence.Variables>
+                                              <Assign x:TypeArguments="mtbwa:AgileTestPlatformSpec" DisplayName="Назначение спецификации для agileTestPlatformAssembly" To="[agileTestPlatformAssembly]" Value="[DirectCast(spec, Microsoft.TeamFoundation.Build.Workflow.Activities.AgileTestPlatformSpec)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                              <mtbwa:FindMatchingFiles DisplayName="Поиск тестовых сборок платформы тестирования Visual Studio" MatchPattern="[String.Format(&quot;{0}\{1}&quot;, outputDirectory, agileTestPlatformAssembly.AssemblyFileSpec)]" Result="[agileTestPlatformAssemblies]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                              <If Condition="[agileTestPlatformAssemblies.Count() &gt; 0]" DisplayName="Если найдены тестовый сборки платформы тестирования Visual Studio" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                                <If.Then>
+                                                  <If Condition="[agileTestPlatformAssembly.HasRunSettingsFile]" DisplayName="Если agileTestPlatformAssembly.HasRunSettingsFile" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                                    <If.Then>
+                                                      <Sequence DisplayName="Поиск файла параметров запуска и запуск Visual Studio Test Runner" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                                        <Sequence.Variables>
+                                                          <Variable x:TypeArguments="x:String" Name="localRunSettings"/>
+                                                        </Sequence.Variables>
+                                                        <mtbwa:GenerateRunSettings DisplayName="Создать файл параметров запуска" RunSettingsForTestRun="[agileTestPlatformAssembly.RunSettingsForTestRun]" Result="[localRunSettings]" Workspace="[Workspace]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                                        <mtbwa:RunTests DisplayName="Запуск Visual Studio Test Runner для исходных кодов тестов" RunName="[agileTestPlatformAssembly.RunName]" Flavor="[ConfigurationToBuild.Configuration]" Platform="[ConfigurationToBuild.Platform]" TestSources="[agileTestPlatformAssemblies]" RunSettings="[localRunSettings]" TestCaseFilter="[agileTestPlatformAssembly.TestCaseFilter]" ExecutionPlatform="[agileTestPlatformAssembly.ExecutionPlatform]"/>
+                                                      </Sequence>
+                                                    </If.Then>
+                                                    <If.Else>
+                                                      <mtbwa:RunTests DisplayName="Запуск Visual Studio Test Runner для исходных кодов тестов" RunName="[agileTestPlatformAssembly.RunName]" Flavor="[ConfigurationToBuild.Configuration]" Platform="[ConfigurationToBuild.Platform]" TestSources="[agileTestPlatformAssemblies]" TestCaseFilter="[agileTestPlatformAssembly.TestCaseFilter]" ExecutionPlatform="[agileTestPlatformAssembly.ExecutionPlatform]"/>
+                                                    </If.Else>
+                                                  </If>
+                                                </If.Then>
+                                              </If>
+                                            </Sequence>
+                                          </If.Then>
+                                          <If.Else>
+                                            <If Condition="[TypeOf spec Is Microsoft.TeamFoundation.Build.Workflow.Activities.TestMetadataFileSpec]" DisplayName="Если спецификация - TestMetadataFileSpec" mtbwt:BuildTrackingParticipant.Importance="None">
+                                              <If.Then>
+                                                <Sequence DisplayName="Запуск MSTest для файла метаданных">
+                                                  <Sequence.Variables>
+                                                    <Variable x:TypeArguments="mtbwa:TestMetadataFileSpec" Name="testMetadataFile"/>
+                                                    <Variable x:TypeArguments="x:String" Name="localTestMetadata"/>
+                                                  </Sequence.Variables>
+                                                  <Assign x:TypeArguments="mtbwa:TestMetadataFileSpec" DisplayName="Назначение спецификации для testMetadataFile" To="[testMetadataFile]" Value="[DirectCast(spec, Microsoft.TeamFoundation.Build.Workflow.Activities.TestMetadataFileSpec)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                                  <mtbwa:ConvertWorkspaceItem DisplayName="Преобразование серверного пути в локальный" Input="[testMetadataFile.MetadataFileName]" Result="[localTestMetadata]" Workspace="[Workspace]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                                  <mtbwa:MSTest RunTitle="[testMetadataFile.RunName]" Category="[testMetadataFile.CategoryFilter]" DisplayName="Запуск MSTest для файла метаданных" Flavor="[ConfigurationToBuild.Configuration]" MaxPriority="[testMetadataFile.MaximumPriority]" MinPriority="[testMetadataFile.MinimumPriority]" PathToResultsFilesRoot="[TestResultsDirectory]" Platform="[ConfigurationToBuild.Platform]" SearchPathRoot="[outputDirectory]" TestLists="[testMetadataFile.TestLists]" TestMetadata="[localTestMetadata]" TestSettings="[String.Empty]" CommandLineArguments="[testMetadataFile.MSTestCommandLineArgs]"/>
+                                                </Sequence>
+                                              </If.Then>
+                                              <If.Else>
+                                                <Sequence DisplayName="Запуск MSTest для тестовых сборок" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                                  <Sequence.Variables>
+                                                    <Variable x:TypeArguments="mtbwa:TestAssemblySpec" Name="testAssembly"/>
+                                                    <Variable x:TypeArguments="scg:IEnumerable(x:String)" Name="testAssemblies"/>
+                                                    <Variable x:TypeArguments="x:String" Default="[String.Empty]" Name="testFlavor"/>
+                                                    <Variable x:TypeArguments="x:String" Default="[String.Empty]" Name="testPlatform"/>
+                                                  </Sequence.Variables>
+                                                  <Assign x:TypeArguments="mtbwa:TestAssemblySpec" DisplayName="Назначение спецификации для testAssembly" To="[testAssembly]" Value="[DirectCast(spec, Microsoft.TeamFoundation.Build.Workflow.Activities.TestAssemblySpec)]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                                  <mtbwa:FindMatchingFiles DisplayName="Поиск тестовых сборок" MatchPattern="[String.Format(&quot;{0}\{1}&quot;, outputDirectory, testAssembly.AssemblyFileSpec)]" Result="[testAssemblies]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                                  <If Condition="[testAssemblies.Count() &gt; 0]" DisplayName="Если найдены сборки тестовые сборки" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                                    <If.Then>
+                                                      <If Condition="[testAssembly.HasTestSettingsFile]" DisplayName="Если testAssembly.HasTestSettingsFile" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                                        <If.Then>
+                                                          <Sequence DisplayName="Поиск файла параметров тестирования и запуск MSTest" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                                            <Sequence.Variables>
+                                                              <Variable x:TypeArguments="x:String" Name="localTestSettings"/>
+                                                            </Sequence.Variables>
+                                                            <mtbwa:ConvertWorkspaceItem DisplayName="Преобразование серверного пути в локальный" Input="[testAssembly.TestSettingsFileName]" Result="[localTestSettings]" Workspace="[Workspace]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                                            <mtbwa:MSTest RunTitle="[testAssembly.RunName]" Category="[testAssembly.CategoryFilter]" DisplayName="Запуск MSTest для тестовых сборок" Flavor="[ConfigurationToBuild.Configuration]" MaxPriority="[testAssembly.MaximumPriority]" MinPriority="[testAssembly.MinimumPriority]" PathToResultsFilesRoot="[TestResultsDirectory]" Platform="[ConfigurationToBuild.Platform]" SearchPathRoot="[outputDirectory]" TestContainers="[testAssemblies]" TestSettings="[localTestSettings]" CommandLineArguments="[testAssembly.MSTestCommandLineArgs]"/>
+                                                          </Sequence>
+                                                        </If.Then>
+                                                        <If.Else>
+                                                          <mtbwa:MSTest RunTitle="[testAssembly.RunName]" Category="[testAssembly.CategoryFilter]" DisplayName="Запуск MSTest для тестовых сборок" Flavor="[ConfigurationToBuild.Configuration]" MaxPriority="[testAssembly.MaximumPriority]" MinPriority="[testAssembly.MinimumPriority]" PathToResultsFilesRoot="[TestResultsDirectory]" Platform="[ConfigurationToBuild.Platform]" SearchPathRoot="[outputDirectory]" TestContainers="[testAssemblies]" CommandLineArguments="[testAssembly.MSTestCommandLineArgs]"/>
+                                                        </If.Else>
+                                                      </If>
+                                                    </If.Then>
+                                                  </If>
+                                                </Sequence>
+                                              </If.Else>
+                                            </If>
+                                          </If.Else>
+                                        </If>
+                                      </TryCatch.Try>
+                                      <TryCatch.Catches>
+                                        <Catch x:TypeArguments="s:Exception">
+                                          <ActivityAction x:TypeArguments="s:Exception">
+                                            <ActivityAction.Argument>
+                                              <DelegateInArgument x:TypeArguments="s:Exception" Name="testException"/>
+                                            </ActivityAction.Argument>
+                                            <Sequence DisplayName="Обработка исключения тестового запуска">
+                                              <Sequence.Variables>
+                                                <Variable x:TypeArguments="scg:ICollection(mtbc:IQueuedBuild)" Name="failedRequests"/>
+                                              </Sequence.Variables>
+                                              <If Condition="[Not (TypeOf testException Is Microsoft.TeamFoundation.Build.Workflow.Activities.TestFailureException)]" DisplayName="Если testException НЕ равно TestFailureException" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                                <If.Then>
+                                                  <mtbwa:WriteBuildError DisplayName="Запись сообщения об ошибке теста" Message="[testException.Message]"/>
+                                                </If.Then>
+                                              </If>
+                                              <mtbwa:SetBuildProperties DisplayName="Установить для TestStatus значение Failed" PropertiesToSet="TestStatus" TestStatus="[Microsoft.TeamFoundation.Build.Client.BuildPhaseStatus.Failed]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                              <If Condition="[spec.FailBuildOnFailure]" DisplayName="Если spec.FailBuildOnFailure" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                                <If.Then>
+                                                  <Assign x:TypeArguments="s:Boolean" DisplayName="Установить для treatTestFailureAsBuildFailure значение True" To="[treatTestFailureAsBuildFailure]" Value="[True]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                                </If.Then>
+                                              </If>
+                                              <mtbwa:GetApprovedRequests DisplayName="Получение запросов, одобренных для возврата" Result="[failedRequests]" mtbwt:BuildTrackingParticipant.Importance="None"/>
+                                              <mtbwa:RetryRequests Behavior="[Microsoft.TeamFoundation.Build.Workflow.Activities.RetryBehavior.DoNotBatch]" DisplayName="Пометить запросы для повторной попытки" Requests="[failedRequests]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                                            </Sequence>
+                                          </ActivityAction>
+                                        </Catch>
+                                      </TryCatch.Catches>
+                                    </TryCatch>
+                                  </ActivityAction>
+                                </ForEach>
+                              </If.Then>
+                            </If>
+                          </Sequence>
+                        </If.Then>
+                      </If>
+                      <If Condition="[deployOutput]" DisplayName="Выходные данные развертывания" mtbwt:BuildTrackingParticipant.Importance="Low">
+                        <If.Then>
+                          <If Condition="[treatTestFailureAsBuildFailure And (BuildDetail.TestStatus = Microsoft.TeamFoundation.Build.Client.BuildPhaseStatus.Failed)]" DisplayName="Успех тестового развертывания" mtbwt:BuildTrackingParticipant.Importance="Low">
+                            <If.Then>
+                              <mtbwa:WriteBuildMessage DisplayName="Запись сообщения" Message="Развертывание пропускается из-за сбоев теста." Importance="[Microsoft.TeamFoundation.Build.Client.BuildMessageImportance.Normal]"/>
+                            </If.Then>
+                            <If.Else>
+                              <If Condition="[Not azureWebSiteProfile Is Nothing]" DisplayName="Выходные данные публикации">
+                                <If.Then>
+                                  <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                                    <mtdwa:MSDeploy DisplayName="MSDeploy" BuildPath="[outputDirectory]" PublishEndpoint="[azureWebSiteProfile.PublishUrl]" TargetSite="[azureWebSiteProfile.MSDeploySite]" UserName="[azureWebSiteProfile.UserName]" Password="[azureWebSiteProfile.UserPWD]" AllowUntrustedCertificates="[AllowUntrustedCertificates]"/>
+                                    <mtbwa:WriteCustomSummaryInformation DisplayName="Write Custom Deployment Summary" Message="[String.Format(&quot;Ваш веб-сайт развернут в: [{0}]({0})&quot;,azureWebSiteProfile.DestinationAppUrl.ToString())]" SectionDisplayName="Сводка о развертывании" SectionKey="customSummarySectionKey" SectionPriority="160"/>
+                                    <mtdwa:SetCurrentAzureWebsiteBuildNumber DisplayName="Установка текущего номера построения на портале веб-сайта." ConnectedService="[deploymentEnvironment.ConnectedService]" AllowUntrustedCertificates="[AllowUntrustedCertificates]" WebsiteEnvironment="[deploymentEnvironment]" mtbwt:BuildTrackingParticipant.Importance="Normal"/>
+                                  </Sequence>
+                                </If.Then>
+                                <If.Else>
+                                  <If Condition="[deploymentEnvironment.EnvironmentMetadata.Kind = Microsoft.TeamFoundation.Build.Client.DeploymentEnvironmentKind.AzureCloudApp]" DisplayName="DeploymentEnvironment равняется облачной службе Azure" mtbwt:BuildTrackingParticipant.Importance="Low">
+                                    <If.Then>
+                                      <Sequence mtbwt:BuildTrackingParticipant.Importance="None">
+                                        <mtdwa:DeployAzureCloudApp DisplayName="Развернуть приложение в платформе Azure" ConnectedService="[deploymentEnvironment.ConnectedService]" DeploymentProfile="[azureCloudAppProfile]" AllowUntrustedCertificates="[AllowUntrustedCertificates]" BuildPath="[outputDirectory]"/>
+                                      </Sequence>
+                                    </If.Then>
+                                  </If>
+                                </If.Else>
+                              </If>
+                            </If.Else>
+                          </If>
+                        </If.Then>
+                      </If>
+                    </Sequence>
+                    <If Condition="[BuildDetail.CompilationStatus = Microsoft.TeamFoundation.Build.Client.BuildPhaseStatus.Unknown]" DisplayName="Если CompilationStatus = Unknown" mtbwt:BuildTrackingParticipant.Importance="Low">
+                      <If.Then>
+                        <mtbwa:SetBuildProperties CompilationStatus="[Microsoft.TeamFoundation.Build.Client.BuildPhaseStatus.Succeeded]" DisplayName="Set CompilationStatus to Succeeded" PropertiesToSet="CompilationStatus" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                      </If.Then>
+                    </If>
+                    <If Condition="[BuildDetail.TestStatus = Microsoft.TeamFoundation.Build.Client.BuildPhaseStatus.Unknown]" DisplayName="Если TestStatus = Unknown" mtbwt:BuildTrackingParticipant.Importance="Low">
+                      <If.Then>
+                        <mtbwa:SetBuildProperties DisplayName="Set TestStatus to Succeeded" PropertiesToSet="TestStatus" TestStatus="[Microsoft.TeamFoundation.Build.Client.BuildPhaseStatus.Succeeded]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                      </If.Then>
+                    </If>
+                    <If Condition="[treatTestFailureAsBuildFailure And (BuildDetail.TestStatus = Microsoft.TeamFoundation.Build.Client.BuildPhaseStatus.Failed)]" DisplayName="Если TreatTestFailureAsBuildFailure и (TestStatus = Failed)" mtbwt:BuildTrackingParticipant.Importance="Low">
+                      <If.Then>
+                        <mtbwa:SetBuildProperties DisplayName="Установить для Status значение Failed" PropertiesToSet="Status" Status="[Microsoft.TeamFoundation.Build.Client.BuildStatus.Failed]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                      </If.Then>
+                    </If>
+                  </Sequence>
+                </TryCatch.Try>
+                <TryCatch.Catches>
+                  <Catch x:TypeArguments="s:Exception">
+                    <ActivityAction x:TypeArguments="s:Exception">
+                      <ActivityAction.Argument>
+                        <DelegateInArgument x:TypeArguments="s:Exception" Name="compilationExceptionArgument"/>
+                      </ActivityAction.Argument>
+                      <Assign x:TypeArguments="s:Exception" DisplayName="Сохранение ошибки компиляции" To="[compilationException]" Value="[compilationExceptionArgument]" mtbwt:BuildTrackingParticipant.Importance="None"/>
+                    </ActivityAction>
+                  </Catch>
+                </TryCatch.Catches>
+              </TryCatch>
+              <If Condition="[AssociateChangesetsAndWorkItems]" DisplayName="Если AssociateChangesetsAndWorkItems" mtbwt:BuildTrackingParticipant.Importance="Low">
+                <If.Then>
+                  <If Condition="[CreateLabel]" DisplayName="Если CreateLabel и AssociateChangesetsAndWorkItems" mtbwt:BuildTrackingParticipant.Importance="Low">
+                    <If.Then>
+                      <mtbwa:InvokeForReason DisplayName="Сопоставление наборов изменений и рабочих элементов для построений, не относящихся к набору отложенных изменений" Reason="Manual, IndividualCI, BatchedCI, Schedule, ScheduleForced, UserCreated">
+                        <mtbwa:AssociateChangesetsAndWorkItems DisplayName="Сопоставление наборов изменений и рабочих элементов" Result="[associatedChangesets]"/>
+                      </mtbwa:InvokeForReason>
+                    </If.Then>
+                    <If.Else>
+                      <mtbwa:WriteBuildWarning DisplayName="Запись предупреждений сопоставления наборов изменений и рабочих элементов" Message="Не удается сопоставить наборы изменений и рабочие элементы, поскольку параметр LabelSources имеет значение False."/>
+                    </If.Else>
+                  </If>
+                </If.Then>
+              </If>
+            </Parallel>
+            <If Condition="[Not compilationException Is Nothing]" DisplayName="Если возникло исключение компиляции" mtbwt:BuildTrackingParticipant.Importance="Low">
+              <If.Then>
+                <Throw DisplayName="Повторное создание исключения компиляции" Exception="[compilationException]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+              </If.Then>
+            </If>
+            <Parallel DisplayName="Получение затронутых тестов, индексация исходного кода и публикация символов">
+              <If Condition="[PerformTestImpactAnalysis]" DisplayName="Если PerformTestImpactAnalysis" mtbwt:BuildTrackingParticipant.Importance="Low">
+                <If.Then>
+                  <Sequence DisplayName="Получение затронутых тестов" mtbwt:BuildTrackingParticipant.Importance="Low">
+                    <Sequence.Variables>
+                      <Variable x:TypeArguments="scg:IEnumerable(x:String)" Name="assemblies"/>
+                    </Sequence.Variables>
+                    <mtbwa:FindMatchingFiles DisplayName="Поиск результатов построения" MatchPattern="[String.Format(&quot;{0}\**\*.dll;{0}\**\*.exe&quot;, BinariesDirectory)]" Result="[assemblies]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                    <mttbb:GetImpactedTests Assemblies="[assemblies]" AssociatedChangesets="[associatedChangesets]" BinariesRoot="[BinariesDirectory]" Build="[BuildDetail]" CodeChanges="{x:Null}" DisplayName="Получение затронутых тестов" ImpactedTests="{x:Null}" Workspace="[Workspace]"/>
+                  </Sequence>
+                </If.Then>
+              </If>
+              <If Condition="[SourceAndSymbolServerSettings.IndexSources Or SourceAndSymbolServerSettings.HasSymbolStorePath]" DisplayName="Если SourceAndSymbolServerSettings.IndexSources или SourceAndSymbolServerSettings.HasSymbolStorePath" mtbwt:BuildTrackingParticipant.Importance="Low">
+                <If.Then>
+                  <mtbwa:InvokeForReason DisplayName="Индексация исходного кода и публикация символов для инициированных построений" Reason="Triggered">
+                    <mtbwa:InvokeForReason.Variables>
+                      <Variable x:TypeArguments="scg:IEnumerable(x:String)" Name="symbolFiles"/>
+                    </mtbwa:InvokeForReason.Variables>
+                    <mtbwa:FindMatchingFiles DisplayName="Поиск файлов символов" MatchPattern="[String.Format(&quot;{0}\**\*.pdb&quot;, BinariesDirectory)]" Result="[symbolFiles]" mtbwt:BuildTrackingParticipant.Importance="Low"/>
+                    <If Condition="[SourceAndSymbolServerSettings.IndexSources]" DisplayName="Если SourceAndSymbolServerSettings.IndexSources" mtbwt:BuildTrackingParticipant.Importance="Low">
+                      <If.Then>
+                        <TryCatch DisplayName="Попробуйте проиндексировать исходный код" mtbwt:BuildTrackingParticipant.Importance="Low">
+                          <TryCatch.Try>
+                            <mtbwa:IndexSources DisplayName="Индексация исходного кода" FileList="[symbolFiles]"/>
+                          </TryCatch.Try>
+                          <TryCatch.Catches>
+                            <Catch x:TypeArguments="s:Exception">
+                              <ActivityAction x:TypeArguments="s:Exception">
+                                <ActivityAction.Argument>
+                                  <DelegateInArgument x:TypeArguments="s:Exception" Name="exception"/>
+                                </ActivityAction.Argument>
+                                <mtbwa:WriteBuildError DisplayName="Запись ошибки индексации исходного кода" Message="[exception.Message]"/>
+                              </ActivityAction>
+                            </Catch>
+                          </TryCatch.Catches>
+                        </TryCatch>
+                      </If.Then>
+                    </If>
+                    <If Condition="[SourceAndSymbolServerSettings.HasSymbolStorePath]" DisplayName="Если SourceAndSymbolServerSettings.HasSymbolStorePath" mtbwt:BuildTrackingParticipant.Importance="Low">
+                      <If.Then>
+                        <TryCatch DisplayName="Попробуйте опубликовать символы" mtbwt:BuildTrackingParticipant.Importance="Low">
+                          <TryCatch.Try>
+                            <mtbwa:SharedResourceScope DisplayName="Синхронизация доступа к хранилищу символов" MaxExecutionTime="[TimeSpan.Zero]" MaxWaitTime="[New TimeSpan(1, 0, 0)]" ResourceName="[SourceAndSymbolServerSettings.SymbolStorePath]" mtbwt:BuildTrackingParticipant.Importance="Low">
+                              <mtbwa:PublishSymbols DisplayName="Публикация символов" FileList="[symbolFiles]" ProductName="[BuildDetail.BuildDefinition.Name]" StorePath="[SourceAndSymbolServerSettings.SymbolStorePath]" Version="[BuildDetail.BuildNumber]"/>
+                            </mtbwa:SharedResourceScope>
+                          </TryCatch.Try>
+                          <TryCatch.Catches>
+                            <Catch x:TypeArguments="s:Exception">
+                              <ActivityAction x:TypeArguments="s:Exception">
+                                <ActivityAction.Argument>
+                                  <DelegateInArgument x:TypeArguments="s:Exception" Name="exception"/>
+                                </ActivityAction.Argument>
+                                <mtbwa:WriteBuildError DisplayName="Запись ошибки публикации символов" Message="[exception.Message]"/>
+                              </ActivityAction>
+                            </Catch>
+                          </TryCatch.Catches>
+                        </TryCatch>
+                      </If.Then>
+                    </If>
+                  </mtbwa:InvokeForReason>
+                </If.Then>
+              </If>
+            </Parallel>
+          </Sequence>
+        </TryCatch.Try>
+      </TryCatch>
+    </mtbwa:AgentScope>
+    <mtbwa:InvokeForReason DisplayName="Возврат собранных изменений для построений CheckInShelveset" Reason="CheckInShelveset">
+      <mtbwa:CheckInGatedChanges DisplayName="Возврат собранных изменений"/>
+    </mtbwa:InvokeForReason>
+  </Sequence>
+</Activity>
